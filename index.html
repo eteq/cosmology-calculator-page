@@ -34,20 +34,21 @@
 
         <div>
             <label for="cosmo-methods">What Calculation do you want to do?</label>
-            <select name="cosmo-methods" id="cosmo-methods">
+            <select name="cosmo-methods" id="cosmo-methods" py-change="cosmo_method_change()">
             </select>
         </div>
 
         <div>
-            <input type="checkbox" id="inverse" name="inverse" value="inverseon">
+            <input type="checkbox" id="inverse" name="inverse" value="inverseon" py-change="update_method_arguments()">
             <label for="inverse">Inverse</label>
         </div>
 
         <div id="method-args">
+            <span id="z-span">z: <input id="z"></span>
             <span id="z1-span">z1: <input id="z1"></span>
             <span id="z2-span">z2: <input id="z2"></span>
 
-            <span id="invert-value-span">value: <input id="value-to-invert" py-change="invert_toggle()"></span>
+            <span id="invert-value-span">value: <input id="value-to-invert"></span>
 
             <span id="additional-args"></span>
 

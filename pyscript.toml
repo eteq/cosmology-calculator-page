@@ -1,1 +1,1 @@
-packages = ["astropy", "ssl", "pyodide-http"]
+packages = ["astropy", "pytest", "ssl", "pyodide-http"]
