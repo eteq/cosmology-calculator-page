@@ -1,17 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <title>Astropy Coordinate Conversion</title>
+    <title>Astropy Cosmology Calculator</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <link rel="stylesheet" href="https://pyscript.net/releases/2023.03.1/pyscript.css" />
+    <link rel="stylesheet" href="cosmo.css" />
     <script defer src="https://pyscript.net/releases/2023.03.1/pyscript.js"></script>
 </head>
+
 <body>
-    <h1>Cosmology Calculator</h1>
- 
-    
+    <h1>Astropy Cosmology Calculator</h1>
+
+    <div id="initializing-div">
+        <p>Initializing...</p>
+    </div>
+
+    <div id="main-content-div">
+        <p>This tool performs cosmological calculations using the <code>astropy.cosmology</code> sub-package of the <a href="https://www.astropy.org">Astropy Project</a> core package. It is currently based on v<span id="astropy-version">?</span> of <code>astropy</code>.</p>
+
+        <div>
+            <label for="cosmology-class">Cosmology Type:</label>
+            <select name="cosmology-class" id="cosmology-class" py-change="cosmo_class_change()">
+            </select>
+
+        </div>
+
+        <div>
+            <table id="class-attributes">table here</table>
+        </div>
+
+
+        <div>
+            <label for="cosmo-methods">What Calculation do you want to do?</label>
+            <select name="cosmo-methods" id="cosmo-methods">
+            </select>
+        </div>
+
+        <div>
+            <input type="checkbox" id="inverse" name="inverse" value="inverseon">
+            <label for="inverse">Inverse</label>
+        </div>
+
+        <div id="method-args">
+            <span id="z1-span">z1: <input id="z1"></span>
+            <span id="z2-span">z2: <input id="z2"></span>
+
+            <span id="invert-value-span">value: <input id="value-to-invert" py-change="invert_toggle()"></span>
+
+            <span id="additional-args"></span>
+
+        </div>
+
+        <button id="go-button" py-click="compute()" disabled>Go!</button>
+
+        <div id="docs-or-output">
+        </div>
+    </div>
+
+
     <py-config src="./pyscript.toml"></py-config>
     <py-script src="./main.py"></py-script>
+
 </body>
+
 </html>
