@@ -28,7 +28,12 @@
         </div>
 
         <div>
-            <table id="class-attributes">table here</table>
+            <table id="cosmo-parameter-table">
+                <tr>
+                    <th>Parameter Name</th>
+                    <th>Value</th>
+                </tr>
+            </table>
         </div>
 
 
@@ -44,9 +49,9 @@
         </div>
 
         <div id="method-args">
-            <span id="z-span">z: <input id="z"></span>
-            <span id="z1-span">z1: <input id="z1"></span>
-            <span id="z2-span">z2: <input id="z2"></span>
+            <span id="z-span">z: <input id="z-input"></span>
+            <span id="z1-span">z1: <input id="z1-input"></span>
+            <span id="z2-span">z2: <input id="z2-input"></span>
 
             <span id="invert-value-span">value: <input id="value-to-invert"></span>
 
@@ -54,7 +59,7 @@
 
         </div>
 
-        <button id="go-button" py-click="compute()" disabled>Go!</button>
+        <button id="calculate-button" py-click="calculate()">Calculate!</button>
 
         <div id="docs-or-output">
         </div>
