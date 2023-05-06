@@ -1,7 +1,10 @@
-# this is needed for conversions that need IERS data
-#import pyodide_http
-#pyodide_http.patch_all()
 import inspect
+import warnings
+
+# always an iffy life choice to suppress deprecations... but otherwise it appears on the web page
+warnings.filterwarnings("ignore", category=DeprecationWarning) 
+
+import numpy as np
 
 import astropy
 from astropy import cosmology
@@ -22,10 +25,13 @@ def get_all_subclasses(cls):
 
     return all_subclasses
 
-def get_selected_cosmo_cls():
+def get_selected_cosmo():
+    """
+    Note this might be a class or might be an instance
+    """
     selelem = Element('cosmology-class')
-    class_name = selelem.element.value
-    return getattr(cosmology, class_name)
+    cname = selelem.element.value.split(' (')[0]
+    return getattr(cosmology, cname)
 
 
 def get_selected_method(bound=False):
@@ -33,7 +39,7 @@ def get_selected_method(bound=False):
     if bound:
         return getattr(get_cosmology_object(), method_name)
     else:
-        return getattr(get_selected_cosmo_cls(), method_name)
+        return getattr(get_selected_cosmo(), method_name)
 
 def populate_cosmology_class_dropdown():
     selelem = Element('cosmology-class')
@@ -44,6 +50,8 @@ def populate_cosmology_class_dropdown():
             class_names.remove(nm)
     class_names.sort()
 
+    class_names += [f'{cnm} ({getattr(cosmology, cnm).__class__.__name__})' for cnm in cosmology.available]
+
     selelem.element.innerHTML = '\n'.join([f'<option value="{nm}">{nm}</option>' for nm in class_names])
 
     cosmo_class_change()
@@ -53,14 +61,17 @@ def populate_parameters_table():
     global cosmo_table_header  # ugggh
     table_elements = [cosmo_table_header]
 
-    cosmo_cls = get_selected_cosmo_cls()
+    selected_cosmo = get_selected_cosmo()
 
-    param_names = cosmo_cls.__parameters__
-    init_sig = inspect.signature(cosmo_cls.__init__)
-    defaults = [''
-                if init_sig.parameters[pnm].default is init_sig.parameters[pnm].empty else
-                init_sig.parameters[pnm].default 
-                for pnm in param_names]
+    param_names = selected_cosmo.__parameters__
+    if inspect.isclass(selected_cosmo):
+        init_sig = inspect.signature(selected_cosmo.__init__)
+        defaults = [''
+                    if init_sig.parameters[pnm].default is init_sig.parameters[pnm].empty else
+                    init_sig.parameters[pnm].default 
+                    for pnm in param_names]
+    else:
+        defaults = [getattr(selected_cosmo, pnm) for pnm in param_names]
     
     for pnm, default in zip(param_names, defaults):
         table_elements.append(f'<tr><td>{pnm}</td><td><input type="text" id="{pnm}-value" value="{default}"></td></tr>')
@@ -68,23 +79,55 @@ def populate_parameters_table():
     Element('cosmo-parameter-table').element.innerHTML = '\n'.join(table_elements)
 
 def get_cosmology_object():
-    cosmo_cls = get_selected_cosmo_cls()
+    cosmo_cls = get_selected_cosmo()
+    if not inspect.isclass(cosmo_cls):
+        cosmo_cls = cosmo_cls.__class__
     param_names = cosmo_cls.__parameters__
 
     input_elems = [Element(f'{pnm}-value') for pnm in param_names]
-    input_kwargs = {pnm:None if elem.element.value == 'None' else u.Quantity(elem.element.value) 
-                    for pnm, elem in zip(param_names, input_elems)}
+
+    input_kwargs = {}
+    for pnm, elem in zip(param_names, input_elems):
+        if elem.element.value == 'None':
+            input_kwargs[pnm] = None
+        elif ']' in elem.element.value:
+            # this is the case where there is an array-Quantity. As of the time of this writing only relevant for m_nu
+            pieces = elem.element.value.split(']')
+
+            # TODO: work out better logic for how to do this that doesn't depend on various somewhat brittle assumptions
+            assert len(pieces) == 2
+            assert(pieces[0][0] == '[')
+
+            arrstr = pieces[0][1:]
+            unitstr = pieces[1]
+
+            # DeprecationWarning: string or file could not be read to its end due to unmatched data; this will raise a ValueError in the future.
+            arr = np.fromstring(arrstr, sep=' ')
+            arr_comma = np.fromstring(arrstr, sep=',')
+            # assume the larger is the correct one
+            if len(arr_comma) > len(arr):
+                arr = arr_comma
+
+            input_kwargs[pnm] = u.Quantity(arr, unitstr) 
+        else:
+            input_kwargs[pnm] = u.Quantity(elem.element.value) 
 
     return cosmo_cls(**input_kwargs)
 
 
-def populate_methods_dropdown(meths):
+def populate_methods_dropdown():
+    meths = sorted(get_redshift_methods(get_selected_cosmo(), include_private=False, include_z2=True))
+
     selelem = Element('cosmo-methods')
+    prev_value = selelem.value
+
     selelem.element.innerHTML = '\n'.join([f'<option value="{meth}">{meth}</option>' for meth in meths])
+    if prev_value in meths:
+        selelem.element.value = prev_value
+
 
 def cosmo_class_change():
-    meths = get_redshift_methods(get_selected_cosmo_cls(), include_private=False, include_z2=True)
-    populate_methods_dropdown(meths)
+    populate_methods_dropdown()
     cosmo_method_change()
     populate_parameters_table()
 
